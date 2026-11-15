@@ -1,0 +1,11 @@
+:root {
+    --accent: #7c3aed;
+    --accent-glow: rgba(124, 58, 237, 0.35);
+    --bg-main: #09090d;
+    --bg-panel: #111118;
+    --bg-card: #181822;
+
+    /* Прозрачность панелей (меняется ползунком в Customize) */
+    --panel-alpha: 0.55;
+    --card-alpha: 0.45;
+}
