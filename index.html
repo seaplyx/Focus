@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Focus. — дашборд продуктивности: задачи, календарь, заметки, Pomodoro-таймер и музыкальный плеер с глубокой кастомизацией.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Focus. — Productivity Dashboard">
+    <meta property="og:description" content="Задачи, календарь, заметки, Pomodoro и плеер. Настраиваемые темы, фон и шрифты. Работает офлайн (PWA).">
+    <meta name="twitter:card" content="summary">
+    <title>Focus. — Productivity Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#09090d">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#09090d] text-white font-['Inter'] antialiased selection:bg-[var(--accent)] selection:text-white">
+
+    <!-- ФОН НА ВСЮ СТРАНИЦУ -->
+    <div id="page-wallpaper" class="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat transition-[background-image] duration-500"></div>
+    <div id="wallpaper-dim" class="fixed inset-0 -z-10 bg-black"></div>
+
+    <!-- AUTH OVERLAY -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+        <div class="bg-[#14141d] border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-[var(--accent)]/20 border border-[var(--accent)]/50 flex items-center justify-center mx-auto shadow-[0_0_20px_var(--accent-glow)]">
+                    <i class="fa-solid fa-asterisk text-[var(--accent)] text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold tracking-tight">Добро пожаловать в Focus.</h2>
+                <p class="text-xs text-zinc-400">Демо-профиль: данные хранятся только в твоём браузере</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">Логин</label>
+                    <input type="text" id="auth-username" required placeholder="Например: Alex" class="w-full bg-[#1c1c28] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--accent)]">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">Аватарка (необязательно)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="file" id="auth-avatar-file" accept="image/*" class="hidden">
+                        <label for="auth-avatar-file" class="flex-1 cursor-pointer py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs font-semibold text-zinc-300 hover:bg-white/10 transition">
+                            <i class="fa-solid fa-image mr-2"></i> Выбрать картинку с ПК
+                        </label>
+                        <img id="auth-avatar-preview" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=1e1b4b" alt="Превью аватарки" class="w-10 h-10 rounded-full border border-[var(--accent)] object-cover">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-[var(--accent)] hover:opacity-90 font-bold text-sm text-white shadow-[0_0_20px_var(--accent-glow)] transition">
+                    Начать
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="min-h-screen flex flex-col lg:flex-row max-w-[1600px] mx-auto p-3 sm:p-5 gap-5">
+
+        <!-- SIDEBAR -->
+        <aside class="panel w-full lg:w-64 border border-white/5 rounded-3xl p-5 flex flex-col justify-between shrink-0">
+            <div>
+                <!-- Logo & Logout -->
+                <div class="flex items-center justify-between px-2 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/50 flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)]">
+                            <i class="fa-solid fa-asterisk text-[var(--accent)] text-lg"></i>
+                        </div>
+                        <span class="text-xl font-extrabold tracking-tight">Focus<span class="text-[var(--accent)]">.</span></span>
+                    </div>
+                    <button id="logout-btn" title="Выйти из аккаунта" aria-label="Выйти из аккаунта" class="text-zinc-500 hover:text-rose-400 text-xs transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+
+                <!-- MUSIC PLAYER -->
+                <div class="mb-6 bg-[#16161f] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-music text-[var(--accent)]"></i> Music Player
+                        </span>
+                        <label for="upload-track-file" title="Добавить музыку с ПК" class="cursor-pointer text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Добавить
+                            <input type="file" id="upload-track-file" accept="audio/*" class="hidden">
+                        </label>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-[#111118] p-2.5 rounded-xl border border-white/5">
+                        <div class="w-9 h-9 rounded-lg bg-[var(--accent)]/20 text-[var(--accent)] flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-compact-disc" id="disc-icon"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p id="track-name" class="text-xs font-semibold text-white truncate">Lo-Fi Chill Stream</p>
+                            <p class="text-[10px] text-zinc-500 truncate">Custom Audio</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between px-1">
+                        <button id="prev-track" aria-label="Предыдущий трек" class="text-zinc-400 hover:text-white text-xs transition"><i class="fa-solid fa-backward-step"></i></button>
+                        <button id="play-pause-btn" aria-label="Играть / пауза" class="w-8 h-8 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white flex items-center justify-center text-xs transition shadow-[0_0_10px_var(--accent-glow)]">
+                            <i class="fa-solid fa-play" id="play-icon"></i>
+                        </button>
+                        <button id="next-track" aria-label="Следующий трек" class="text-zinc-400 hover:text-white text-xs transition"><i class="fa-solid fa-forward-step"></i></button>
+                    </div>
+                    <div class="space-y-2 pt-1">
+                        <div class="flex items-center gap-2">
+                            <button id="mute-btn" aria-label="Выключить звук" class="text-zinc-400 hover:text-white text-xs w-4"><i id="vol-icon" class="fa-solid fa-volume-high"></i></button>
+                            <input id="volume-slider" type="range" min="0" max="100" value="80" aria-label="Громкость" class="flex-1 min-w-0 w-full accent-[var(--accent)] h-1">
+                            <span id="volume-label" class="text-[10px] text-zinc-500 w-9 shrink-0 text-right">80%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-zinc-400 text-xs w-4"></i>
+                            <input id="speed-slider" type="range" min="0.5" max="2" step="0.05" value="1" aria-label="Скорость" class="flex-1 min-w-0 w-full accent-[var(--accent)] h-1">
+                            <button id="speed-label" title="Сбросить скорость" class="text-[10px] text-zinc-400 hover:text-white w-9 shrink-0 text-right">1.0x</button>
+                        </div>
+                        <label class="flex items-center gap-1.5 text-[10px] text-zinc-500 cursor-pointer" title="Если выключить: при замедлении/ускорении меняется и высота звука (эффект slowed / nightcore)">
+                            <input id="pitch-toggle" type="checkbox" checked class="accent-[var(--accent)]"> Сохранять тон
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-1.5" id="sidebar-nav">
+                    <button data-tab="home" class="nav-btn active w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium transition">
+                        <i class="fa-solid fa-house w-4 text-center"></i>
+                        <span>Home</span>
+                    </button>
+                    <button data-tab="calendar" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition">
+                        <i class="fa-regular fa-calendar w-4 text-center"></i>
+                        <span>Calendar</span>
+                    </button>
+                    <button data-tab="tasks" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition">
+                        <i class="fa-regular fa-circle-check w-4 text-center"></i>
+                        <span>Tasks</span>
+                    </button>
+                    <button data-tab="notes" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition">
+                        <i class="fa-regular fa-file-lines w-4 text-center"></i>
+                        <span>Notes</span>
+                    </button>
+                    <button data-tab="settings" class="nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition">
+                        <i class="fa-solid fa-sliders w-4 text-center"></i>
+                        <span>Customize</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Quote Card -->
+            <div class="mt-6 bg-[#16161f] border border-white/5 rounded-2xl overflow-hidden">
+                <div class="relative h-28 w-full">
+                    <img id="sidebar-wallpaper" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop" alt="Vibe" class="w-full h-full object-cover opacity-60">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#16161f] via-[#16161f]/40 to-transparent"></div>
+                    <div class="absolute bottom-2.5 left-3 right-3">
+                        <p class="text-xs font-bold text-white leading-snug">“Discipline</p>
+                        <p class="text-[11px] text-zinc-400">today — freedom tomorrow.”</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="flex-1 flex flex-col gap-5 min-w-0">
+
+            <!-- TOP BAR -->
+            <section class="panel relative rounded-3xl overflow-hidden border border-white/5 p-5 sm:p-6">
+                <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                    <div class="relative flex-1 max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
+                        <input type="text" id="global-search" placeholder="Search anything..." class="w-full bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-[var(--accent)] transition">
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <label for="quick-bg-upload" title="Сменить обои" class="cursor-pointer w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/10 hover:border-[var(--accent)] flex items-center justify-center text-zinc-300 hover:text-white transition">
+                            <i class="fa-regular fa-image text-sm"></i>
+                            <input type="file" id="quick-bg-upload" accept="image/*" class="hidden">
+                        </label>
+                        <button id="open-theme-modal" title="Сменить цвет темы" aria-label="Кастомизация" class="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/10 hover:border-[var(--accent)] flex items-center justify-center text-[var(--accent)] transition">
+                            <i class="fa-solid fa-palette text-sm"></i>
+                        </button>
+                        <div class="flex items-center gap-2 bg-black/50 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full">
+                            <img id="user-avatar-img" src="" alt="Avatar" class="w-7 h-7 rounded-full border border-[var(--accent)] object-cover bg-zinc-900">
+                            <span id="user-username-label" class="text-xs font-semibold text-white">User</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 1: HOME -->
+            <div id="section-home" class="tab-section flex flex-col gap-5">
+                <section class="panel border border-white/5 rounded-3xl p-6">
+                    <div class="mb-6">
+                        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                            <span id="greeting-text">Good evening</span>, <span id="user-greeting-name" class="text-[var(--accent)]">User</span>!
+                        </h1>
+                        <div class="flex items-center gap-2 text-zinc-400 text-xs sm:text-sm mt-2 font-medium">
+                            <i class="fa-regular fa-calendar text-[var(--accent)]"></i>
+                            <span id="current-date-label">Saturday, Nov 14, 2026</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-11 h-11 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <div>
+                                    <div id="stat-total" class="text-2xl font-bold">0</div>
+                                    <div class="text-xs text-zinc-400">Total Tasks</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-11 h-11 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                                    <i class="fa-regular fa-clock"></i>
+                                </div>
+                                <div>
+                                    <div id="stat-pending" class="text-2xl font-bold">0</div>
+                                    <div class="text-xs text-zinc-400">Pending</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-11 h-11 rounded-full bg-[var(--accent)]/20 border border-[var(--accent)]/40 flex items-center justify-center text-[var(--accent)]">
+                                    <i class="fa-solid fa-chart-simple"></i>
+                                </div>
+                                <div>
+                                    <div id="stat-percent" class="text-2xl font-bold">0%</div>
+                                    <div class="text-xs text-zinc-400">Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+                    <div class="xl:col-span-8 flex flex-col gap-5">
+                        <section class="panel border border-white/5 rounded-3xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-lg font-bold">Recent Tasks</h2>
+                                <button onclick="switchTab('tasks')" class="text-xs text-[var(--accent)] hover:underline">Все задачи →</button>
+                            </div>
+                            <div id="home-task-list" class="space-y-2.5"></div>
+                        </section>
+                    </div>
+                    <div class="xl:col-span-4 flex flex-col gap-5">
+                        <section class="panel border border-white/5 rounded-3xl p-5">
+                            <h3 class="text-sm font-bold mb-3">Quick Notes</h3>
+                            <div id="home-notes-list" class="space-y-2 mb-3 max-h-32 overflow-y-auto custom-scroll"></div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CALENDAR -->
+            <div id="section-calendar" class="tab-section hidden flex flex-col gap-5">
+                <section class="panel border border-white/5 rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 id="calendar-month-year" class="text-xl font-bold">November 2026</h2>
+                        <div class="flex items-center gap-2">
+                            <button id="cal-prev" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs transition"><i class="fa-solid fa-chevron-left mr-1"></i> Prev</button>
+                            <button id="cal-next" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs transition">Next <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 text-center text-xs font-semibold text-zinc-500 mb-3">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-sm"></div>
+                </section>
+            </div>
+
+            <!-- TAB 3: TASKS -->
+            <div id="section-tasks" class="tab-section hidden flex flex-col gap-5 flex-1">
+                <section class="panel border border-white/5 rounded-3xl p-6 flex-1 flex flex-col">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold mr-4">Tasks Manager</h2>
+                            <div class="flex items-center gap-1.5 bg-[#181822] p-1 rounded-xl border border-white/5" id="task-filters">
+                                <button data-filter="all" class="filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold transition">All</button>
+                                <button data-filter="today" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">Today</button>
+                                <button data-filter="week" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">This Week</button>
+                                <button data-filter="completed" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white transition">Completed</button>
+                            </div>
+                        </div>
+                        <button id="open-task-modal" class="px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-sm flex items-center gap-2 shadow-[0_0_20px_var(--accent-glow)] transition">
+                            <i class="fa-solid fa-plus"></i> Add Task
+                        </button>
+                    </div>
+
+                    <div id="date-filter-banner" class="hidden mb-4 px-3.5 py-2 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-between text-xs">
+                        <span>Фильтр по дате: <strong id="selected-date-text" class="text-[var(--accent)]"></strong></span>
+                        <button id="clear-date-filter" class="text-zinc-300 hover:text-white underline">Сбросить</button>
+                    </div>
+
+                    <div id="task-list" class="space-y-2.5 flex-1 overflow-y-auto pr-1 custom-scroll max-h-[500px]"></div>
+                </section>
+            </div>
+
+            <!-- TAB 4: NOTES -->
+            <div id="section-notes" class="tab-section hidden flex flex-col gap-5 flex-1">
+                <section class="panel border border-white/5 rounded-3xl p-6 flex-1 flex flex-col">
+                    <h2 class="text-xl font-bold mb-4">Quick Notes</h2>
+                    <div class="relative mb-4">
+                        <textarea id="quick-note-input" rows="3" placeholder="Напиши заметку или идею..." class="w-full bg-[#181822] border border-white/5 rounded-2xl p-4 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[var(--accent)] transition"></textarea>
+                        <button id="save-note-btn" class="absolute bottom-3 right-3 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-[0_0_15px_var(--accent-glow)] transition">Сохранить</button>
+                    </div>
+                    <div id="notes-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[450px] custom-scroll"></div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL: ADD TASK -->
+    <div id="task-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="bg-[#14141d] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">New Task</h3>
+                <button id="close-task-modal" aria-label="Закрыть" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="add-task-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">Название задачи</label>
+                    <input type="text" id="task-title-input" required placeholder="Например: Сверстать лендинг" class="w-full bg-[#1c1c28] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1.5">Категория</label>
+                        <select id="task-category-input" class="w-full bg-[#1c1c28] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]">
+                            <option value="Web Dev">Web Dev</option>
+                            <option value="Study">Study</option>
+                            <option value="Health">Health</option>
+                            <option value="Design">Design</option>
+                            <option value="Personal">Personal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1.5">Дедлайн (Дата)</label>
+                        <input type="date" id="task-date-input" required class="w-full bg-[#1c1c28] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1.5">Время</label>
+                    <input type="time" id="task-time-input" value="18:00" class="w-full bg-[#1c1c28] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]">
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-[var(--accent)] hover:opacity-90 font-bold text-sm text-white shadow-[0_0_20px_var(--accent-glow)] transition">
+                    Создать задачу
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CUSTOMIZE -->
+    <div id="theme-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="bg-[#14141d] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Кастомизация Focus.</h3>
+                <button id="close-theme-modal" aria-label="Закрыть" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div>
+                <label class="block text-xs text-zinc-400 mb-2.5">Акцентный цвет интерфейса</label>
+                <div class="flex items-center gap-3">
+                    <button data-color="#7c3aed" aria-label="Фиолетовый" class="color-preset w-8 h-8 rounded-full bg-[#7c3aed] ring-2 ring-white/20 hover:scale-110 transition"></button>
+                    <button data-color="#06b6d4" aria-label="Бирюзовый" class="color-preset w-8 h-8 rounded-full bg-[#06b6d4] ring-2 ring-white/20 hover:scale-110 transition"></button>
+                    <button data-color="#10b981" aria-label="Зелёный" class="color-preset w-8 h-8 rounded-full bg-[#10b981] ring-2 ring-white/20 hover:scale-110 transition"></button>
+                    <button data-color="#f43f5e" aria-label="Розовый" class="color-preset w-8 h-8 rounded-full bg-[#f43f5e] ring-2 ring-white/20 hover:scale-110 transition"></button>
+                    <button data-color="#f59e0b" aria-label="Оранжевый" class="color-preset w-8 h-8 rounded-full bg-[#f59e0b] ring-2 ring-white/20 hover:scale-110 transition"></button>
+                    <input type="color" id="custom-color-picker" value="#7c3aed" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer" title="Свой цвет">
+                </div>
+            </div>
+
+            <div>
+                <label for="opacity-slider" class="block text-xs text-zinc-400 mb-2.5">Прозрачность панелей</label>
+                <input type="range" id="opacity-slider" min="0.2" max="0.9" step="0.05" value="0.55" class="w-full accent-[var(--accent)]">
+            </div>
+
+            <div class="space-y-3">
+                <label class="block text-xs text-zinc-400">Фоновая картинка (Аниме / Арт)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="wallpaper-url-input" placeholder="Вставь ссылку на картинку (https://...)" class="flex-1 bg-[#1c1c28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[var(--accent)]">
+                    <button id="apply-url-wallpaper" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition">ОК</button>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1">
+                    <label class="flex-1 cursor-pointer py-2.5 px-3 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/40 text-center text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition">
+                        <i class="fa-solid fa-upload mr-1.5"></i> Загрузить с ПК
+                        <input type="file" id="modal-bg-upload" accept="image/*" class="hidden">
+                    </label>
+                    <button id="reset-wallpaper-btn" class="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-zinc-400 hover:text-white transition">
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js" defer></script>
+    <script src="js/calendar.js" defer></script>
+    <script src="js/customize.js" defer></script>
+    <script src="js/pomodoro.js" defer></script>
+    <script src="js/app.js" defer></script>
+    <script>
+        if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js');
+    </script>
+</body>
+</html>
